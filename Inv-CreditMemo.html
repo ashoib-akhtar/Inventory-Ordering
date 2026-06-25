@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto','Helvetica','Arial',sans-serif;
+            font-size: 14px;
+            background-color: #f8fafc;
+            height: 100vh;
+            overflow: hidden;
+            color: #1e293b;
+        }
+
+        /* Sidebar hover expansion logic */
+        aside {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 64px;
+            z-index: 50;
+        }
+        aside:hover { width: 260px; }
+
+        .menu-text {
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 0.2s ease;
+            display: none;
+        }
+        aside:hover .menu-text { opacity: 1; display: inline; }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            height: 44px;
+            padding: 0 20px;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: white;
+            border-left-color: #3b82f6;
+        }
+
+        /* Table Styling */
+        .credit-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            color: #64748b;
+            font-weight: 700;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            text-align: left;
+            white-space: nowrap;
+            background: white;
+        }
+        .credit-table td {
+            font-size: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+        .data-row:hover { background-color: #f8fafc; }
+
+        /* Status Badges */
+        .status-finalized { color: #10b981; font-weight: 600; }
+        .status-pending { color: #f59e0b; font-weight: 600; }
+        .status-created { color: #3b82f6; font-weight: 600; }
+        .status-settled { color: #6366f1; font-weight: 600; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        #filterDropdown { transform-origin: top; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hidden-dropdown { opacity: 0; transform: scale(0.95) translateY(-10px); pointer-events: none; }
+
+        .custom-checkbox {
+            appearance: none; width: 14px; height: 14px; border: 2px solid #e2e8f0;
+            border-radius: 4px; cursor: pointer; position: relative; background: white; transition: all 0.2s;
+        }
+        .custom-checkbox:checked { background-color: #2563eb; border-color: #2563eb; }
+        .custom-checkbox:checked::after {
+            content: '✓'; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); color: white; font-size: 9px; font-weight: bold;
+        }
+
+        .view-container { display: none; flex-direction: column; height: 100%; }
+        .view-active { display: flex; }
+
+        /* Tile/Card Styling */
+.meta-tile {
+    background: white;
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 85px;
+    flex: 1;
+}
+
+.meta-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.meta-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #2563eb;
+}
+
+.meta-sub-value {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+}
+
+/* Gradient Card for Total Items */
+.total-items-card {
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.total-items-card .meta-label { color: rgba(255,255,255,0.8); }
+.total-items-card .meta-value { color: white; font-size: 32px; margin-top: 8px; }
+.total-items-card::after {
+    content: '';
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+/* ── MERGED-DASHBOARD SIDEBAR + HEADER (consistency) ── */
+.cs::-webkit-scrollbar{width:5px;height:5px}
+.cs::-webkit-scrollbar-track{background:transparent}
+.cs::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+.cs:hover::-webkit-scrollbar-thumb{background:#94a3b8}
+aside{width:64px;transition:width 0.28s cubic-bezier(.4,0,.2,1);overflow:hidden;white-space:nowrap;display:flex;flex-direction:column;background:#0f172a;flex-shrink:0}
+aside:hover{width:260px}
+.sb-logo{height:56px;display:flex;align-items:center;padding:0 16px;background:#1e293b;flex-shrink:0}
+.logo-box{width:32px;height:32px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.menu-item{display:flex;align-items:center;height:40px;padding:0 20px;color:#94a3b8;transition:all .18s;border-left:3px solid transparent;border-right:none;border-top:none;border-bottom:none;text-decoration:none;cursor:pointer;background:none;width:100%;text-align:left}
+.menu-item svg,.menu-item i{width:20px;min-width:20px;flex-shrink:0}
+.mt{opacity:0;margin-left:12px;font-size:12.5px;font-weight:500;transition:opacity .18s;white-space:nowrap;color:#94a3b8}
+aside:hover .mt{opacity:1}
+.menu-item:hover,.menu-item.active{background:rgba(59,130,246,.1);color:#fff;border-left-color:#3b82f6}
+.menu-item:hover .mt,.menu-item.active .mt{color:#e2e8f0}
+.sb-section{font-size:9px;font-weight:700;color:#64748b;letter-spacing:.12em;padding:10px 20px 3px;text-transform:capitalize;opacity:0;transition:opacity .18s;white-space:nowrap}
+aside:hover .sb-section{opacity:1}
+header{height:44px;background:#0f172a;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 20px;border-bottom:1px solid #1e293b;flex-shrink:0}
+/* vertical grid lines in list table */
+.mod-box table{border-collapse:collapse}
+.mod-box table th,.mod-box table td{border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0}
+.mod-box table th:last-child,.mod-box table td:last-child{border-right:none}
+.mod-box table thead th{padding:9px 14px}
+.mod-box table tbody td{padding:8px 14px}
+    </style>
+</head>
+<body class="flex">
+
+<aside class="h-screen shadow-2xl z-30 flex-shrink-0">
+  <div class="sb-logo">
+    <div class="logo-box"><i data-lucide="layout-grid" class="w-4 h-4 text-white"></i></div>
+    <span class="mt font-bold text-white text-sm ml-3 tracking-wide">Zip Inventory</span>
+  </div>
+  <nav class="flex flex-col flex-1 overflow-y-auto cs pt-2">
+    <a href="index.html" class="menu-item">
+      <i data-lucide="home" class="w-5 h-5"></i><span class="mt">Dashboard</span>
+    </a>
+    <div class="sb-section mt-3">Inventory</div>
+    <a href="Inv-Invoice.html" class="menu-item"><i data-lucide="file-text" class="w-5 h-5"></i><span class="mt">Invoices</span></a>
+    <a href="Inv-CreditMemo.html" class="menu-item active"><i data-lucide="wallet" class="w-5 h-5"></i><span class="mt">Credit Memo</span></a>
+    <a href="Inv-Transfers.html" class="menu-item"><i data-lucide="repeat" class="w-5 h-5"></i><span class="mt">Transfers</span></a>
+    <a href="Inv-Inventory.html" class="menu-item"><i data-lucide="clipboard-check" class="w-5 h-5"></i><span class="mt">Inventory Count</span></a>
+    <a href="#" class="menu-item"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="mt">Actual Sales</span></a>
+    <a href="#" class="menu-item"><i data-lucide="line-chart" class="w-5 h-5"></i><span class="mt">Forecasted Sales</span></a>
+    <a href="Inv-MenuMix.html" class="menu-item"><i data-lucide="utensils-crossed" class="w-5 h-5"></i><span class="mt">Menu Mix</span></a>
+    <a href="Inv-OnHand.html" class="menu-item"><i data-lucide="package" class="w-5 h-5"></i><span class="mt">On Hand</span></a>
+    <a href="Inv-Waste.html" class="menu-item"><i data-lucide="trash-2" class="w-5 h-5"></i><span class="mt">Waste</span></a>
+
+    <div class="sb-section mt-3">Ordering</div>
+    <a href="Ord-Ordering-standalone.html" class="menu-item"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span class="mt">Ordering</span></a>
+    <a href="Ord-OrderGuide-standalone.html" class="menu-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="mt">Order Guide</span></a>
+    <a href="Ord-Historical-standalone.html" class="menu-item"><i data-lucide="history" class="w-5 h-5"></i><span class="mt">Historical Orders</span></a>
+    <a href="Ord-PriceList-standalone.html" class="menu-item"><i data-lucide="tag" class="w-5 h-5"></i><span class="mt">Supplier Item Price List</span></a>
+    <a href="Ord-Analysis-standalone.html" class="menu-item"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="mt">Analysis</span></a>
+
+    <div class="mt-auto border-t border-slate-800/50 pt-2 mb-4">
+      <a href="#" class="menu-item"><i data-lucide="users" class="w-5 h-5"></i><span class="mt">Employees</span></a>
+      <a href="Inv-Reports.html" class="menu-item"><i data-lucide="file-bar-chart" class="w-5 h-5"></i><span class="mt">Reports</span></a>
+      <a href="#" class="menu-item"><i data-lucide="settings" class="w-5 h-5"></i><span class="mt">Settings</span></a>
+    </div>
+  </nav>
+</aside>
+
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Top Nav -->
+<header>
+  <div class="flex items-center gap-5 text-xs">
+    <div class="flex items-center gap-1.5 cursor-pointer group">
+      <i data-lucide="grid-2x2" class="w-3.5 h-3.5 text-slate-400"></i>
+      <span class="font-semibold text-slate-300 group-hover:text-white transition-colors">My Apps</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+    <div class="flex items-center gap-1.5 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700 cursor-pointer">
+      <i data-lucide="map-pin" class="w-3 h-3 text-blue-400"></i>
+      <span class="font-semibold text-slate-200 text-[11px]">Costa Mesa</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+  </div>
+  <div class="flex items-center justify-center gap-2 text-[11px]">
+    <i data-lucide="cloud-sun" class="w-4 h-4 text-yellow-400"></i>
+    <span id="liveTime" class="font-semibold text-slate-200 font-mono">09:20 AM</span>
+    <span class="text-slate-500 text-[9px] font-bold tracking-widest">America/Los Angeles</span>
+  </div>
+  <div class="flex items-center gap-4 justify-end">
+    <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 cursor-pointer">
+      <i data-lucide="building-2" class="w-3 h-3 text-blue-400"></i>
+      <span class="font-bold text-[10px] text-slate-200 tracking-widest">Corporate</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-8 h-8 rounded-full ring-2 ring-slate-700 p-0.5 bg-slate-600">
+  </div>
+</header>
+
+        <!-- VIEW 1: LIST VIEW -->
+        <div id="listView" class="view-container view-active">
+<div class="px-6 py-2 flex items-center justify-between bg-white border-b border-slate-200">
+  <div class="flex items-center gap-3">
+    <div class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+    <h1 class="text-base font-bold text-slate-800 leading-none">Credit Memo</h1>
+  </div>
+  <button class="bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-1.5 rounded-full text-xs font-bold shadow-md flex items-center gap-1.5"><i class="fas fa-plus text-[10px]"></i> Add</button>
+</div>
+<div class="relative px-6 py-2 bg-slate-50 flex items-center border-b border-slate-200">
+  <div class="relative" id="modDateWrap">
+    <button onclick="toggleModDate(event)" class="flex items-center bg-white border border-slate-200 rounded-full px-4 py-1.5 shadow-sm text-[13px] font-semibold text-slate-600 hover:bg-slate-50"><i class="far fa-calendar-alt text-slate-400 mr-2"></i><span id="modDateLabel">Feb 01, 2026 - Feb 09, 2026</span></button>
+    <div id="modDatePanel" class="hidden absolute left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+      <div class="text-[13px] font-bold text-slate-700 mb-2">Select Date Range</div>
+      <label class="block text-[11px] font-semibold text-slate-500 mb-1">From</label>
+      <input type="date" id="modDateFrom" value="2026-02-01" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[13px] mb-2 text-slate-600">
+      <label class="block text-[11px] font-semibold text-slate-500 mb-1">To</label>
+      <input type="date" id="modDateTo" value="2026-02-09" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[13px] mb-3 text-slate-600">
+      <div class="flex gap-2"><button onclick="closeModDate()" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-1.5 text-[12px] font-bold hover:bg-slate-200">Cancel</button><button onclick="applyModDate()" class="flex-1 bg-blue-500 text-white rounded-lg py-1.5 text-[12px] font-bold hover:bg-blue-600">Apply</button></div>
+    </div>
+  </div>
+  <div class="absolute left-1/2 -translate-x-1/2 z-10"><div class="relative">
+    <button onclick="toggleModFilter(event)" class="bg-white border border-slate-200 px-5 py-1.5 rounded-full text-[13px] font-bold text-slate-500 uppercase tracking-wide flex items-center hover:bg-slate-50">Filters <i class="fas fa-sliders-h ml-1 text-slate-300"></i></button>
+    <div id="modFilterPanel" class="hidden absolute left-1/2 -translate-x-1/2 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+      <div class="text-[13px] font-bold text-slate-700 mb-2">Filter</div>
+      <input type="text" oninput="modSearchRows(this.value)" placeholder="Search records…" class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] text-slate-600 mb-1">
+      <p class="text-[10px] text-slate-400">Type to filter rows in the table.</p>
+    </div>
+  </div></div>
+</div>
+
+            <div class="flex-1 overflow-auto bg-slate-50 custom-scrollbar p-4">
+              <div class="mod-box bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                <table class="w-full credit-table border-collapse">
+                    <thead class="sticky top-0 bg-white z-10 shadow-sm">
+                        <tr>
+                            <th>Status <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th>P.O No. <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th>Invoice No. <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th>Authorization No. <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th>Created Date <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th>Supplier <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th class="text-right">Credit Amount <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                            <th class="text-center">Action(s) <i data-lucide="search" class="w-2.5 h-2.5 inline-block ml-1 opacity-50"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="creditMemoBody">
+                    </tbody>
+                </table>
+                <div class="flex items-center justify-between px-6 py-3 border-t border-slate-200 bg-white text-[12px] text-slate-500 rounded-b-xl">
+                  <span id="modPageInfo">Showing 0 entries</span>
+                  <div id="modPageBtns" class="flex items-center gap-1"></div>
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: CREDIT DETAIL VIEW (image_86b4dc.png) -->
+<div id="detailView" class="view-container">
+    <div class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-sm flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <i data-lucide="wallet" class="w-5 h-5 text-slate-400"></i>
+            <h1 class="text-sm font-bold text-slate-600 uppercase tracking-wide">Credit Memo</h1>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button class="bg-cyan-400 hover:bg-cyan-500 text-white px-4 py-1.5 rounded text-[11px] font-bold flex items-center space-x-1 uppercase shadow-sm"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> <span>Settle</span></button>
+            <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded text-[11px] font-bold flex items-center space-x-1 uppercase shadow-sm"><i data-lucide="save" class="w-3.5 h-3.5"></i> <span>Save</span></button>
+            <button class="bg-blue-400 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-[11px] font-bold flex items-center space-x-1 uppercase shadow-sm"><i data-lucide="list" class="w-3.5 h-3.5"></i> <span>Audit Trail</span></button>
+            <button onclick="closeDetail()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-1.5 rounded text-[11px] font-bold flex items-center space-x-1 uppercase shadow-sm"><i data-lucide="x" class="w-3.5 h-3.5"></i> <span>Close</span></button>
+        </div>
+    </div>
+
+    <div class="p-4 bg-slate-50 space-y-4">
+        <div class="flex items-center space-x-3 mb-2">
+            <span class="text-[11px] font-extrabold text-purple-600 italic">Credit Note:</span>
+            <input type="text" placeholder="Add Credit Note..." class="w-1/4 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-blue-400 outline-none shadow-sm">
+        </div>
+
+        <div class="grid grid-cols-12 gap-4">
+    <div class="col-span-3 meta-tile">
+        <div class="space-y-1">
+            <p class="meta-label">Supplier Name</p>
+            <p class="text-blue-600 font-bold text-lg" id="detSupplier">GFS</p>
+        </div>
+        <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Order No.</span>
+            <span class="meta-sub-value" id="detPo">0000229751</span>
+        </div>
+    </div>
+
+    <div class="col-span-3 meta-tile">
+        <div class="space-y-1">
+            <p class="meta-label">Created Date</p>
+            <p class="text-blue-600 font-bold text-lg" id="detDate">01/22/2026</p>
+        </div>
+        <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Credit No.</span>
+            <span class="meta-sub-value" id="detCreditNo">AG-34901</span>
+        </div>
+    </div>
+
+    <div class="col-span-3 meta-tile">
+        <div class="flex justify-between items-start">
+            <div class="space-y-1">
+                <p class="meta-label">Invoice No.</p>
+                <div class="flex items-center space-x-2">
+                    <p class="text-blue-600 font-bold text-lg" id="detInv">9031404612</p>
+                    <button class="text-blue-400 hover:text-blue-600"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-500 flex items-center">
+                <span class="w-1 h-1 bg-emerald-500 rounded-full mr-1"></span> Finalized
+            </span>
+        </div>
+ <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Authorization No.</span>
+            <span class="meta-sub-value" >85002001</span>
+        </div>
+
+    </div>
+
+    <div class="col-span-3 meta-tile total-items-card">
+        <p class="meta-label">Total Items</p>
+        <p class="meta-value" id="detItemCount">08</p>
+        <div class="absolute top-2 right-2 opacity-30"><i data-lucide="paperclip" class="w-4 h-4 text-white"></i></div>
+    </div>
+    
+</div>
+    </div>
+
+    <div class="flex-1 overflow-auto bg-white custom-scrollbar">
+        <table class="w-full credit-table border-collapse">
+            <thead class="sticky top-0 bg-white z-10 shadow-sm border-b border-slate-200">
+                <tr>
+                    <th>SKU No.</th>
+                    <th>Supplier Item Name</th>
+                    <th class="text-center">Price (Case)</th>
+                    <th class="text-center">Shipped Qty</th>
+                    <th class="text-center">Received Qty</th>
+                    <th class="text-center">Item Price</th>
+                    <th class="text-center">Item Tax</th>
+                    <th class="text-center">Credit Amount</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody id="detItemBody">
+                </tbody>
+        </table>
+    </div>
+
+    <div class="bg-white border-t border-slate-200 p-6 flex justify-end flex-shrink-0">
+        <div class="w-64 space-y-2">
+            <div class="flex justify-between text-[11px] font-bold text-slate-400"><span>Sub Total Amount:</span><span id="detSubTotal">$ 0.00</span></div>
+            <div class="flex justify-between text-[11px] font-bold text-slate-400"><span>Total Tax:</span><span>$ 0.00</span></div>
+            <div class="flex justify-between text-[14px] font-black text-slate-800 pt-2 border-t border-slate-100"><span>Total Amount:</span><span id="detTotalCredit">$ 0.00</span></div>
+        </div>
+    </div>
+</div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        const creditMemoData = [
+            { id: 1, status: 'Finalized', po: '0000229751', inv: '9031404612', auth: '-', date: '01/22/2026', supplier: 'GFS', amount: 351.50, sku: '1130858', itemName: 'SAUCE BBQ', price: 35.15, shipQty: 13, recvQty: 3.0000, creditType: 'Auto', creditNo: 'AG-34901' },
+            { id: 2, status: 'Finalized', po: '0000229788', inv: '9031404689', auth: 'AUTH-112', date: '01/23/2026', supplier: 'PEPSI', amount: 42.00, sku: '5566778', itemName: 'PEPSI 12OZ CAN', price: 10.50, shipQty: 10, recvQty: 6.0000, creditType: 'Manual', creditNo: 'AG-35002' },
+            { id: 3, status: 'Created', po: '0000229812', inv: '9031404755', auth: '-', date: '01/24/2026', supplier: 'GFS', amount: 128.40, sku: '2233445', itemName: 'FRIES CRINKLE CUT', price: 42.80, shipQty: 5, recvQty: 2.0000, creditType: 'Auto', creditNo: 'AG-35111' },
+            { id: 4, status: 'Settled', po: '0000229845', inv: '9031404822', auth: 'AUTH-993', date: '01/25/2026', supplier: 'URS', amount: 1200.00, sku: '9900112', itemName: 'CHICKEN BREAST 5KG', price: 150.00, shipQty: 20, recvQty: 12.0000, creditType: 'Auto', creditNo: 'AG-35290' },
+            { id: 5, status: 'Finalized', po: '0000229910', inv: '9031404901', auth: '-', date: '01/26/2026', supplier: 'GFS', amount: 15.25, sku: '7788990', itemName: 'NAPKINS WHITE', price: 15.25, shipQty: 2, recvQty: 1.0000, creditType: 'Auto', creditNo: 'AG-35333' },
+            { id: 6, status: 'Finalized', po: '0000229956', inv: '9031405002', auth: 'AUTH-882', date: '01/27/2026', supplier: 'PEPSI', amount: 567.80, sku: '1122334', itemName: 'DIET PEPSI SYRUP', price: 283.90, shipQty: 4, recvQty: 2.0000, creditType: 'Manual', creditNo: 'AG-35400' },
+            { id: 7, status: 'Created', po: '0000230001', inv: '9031405111', auth: '-', date: '01/28/2026', supplier: 'URS', amount: 89.00, sku: '4455667', itemName: 'PAPER CUPS 16OZ', price: 89.00, shipQty: 2, recvQty: 1.0000, creditType: 'Auto', creditNo: 'AG-35511' }
+        ];
+
+        let currentFilteredData = [...creditMemoData];
+
+        function populateTable(data = currentFilteredData) {
+            const body = document.getElementById('creditMemoBody');
+            body.innerHTML = data.map(item => `
+                <tr class="data-row">
+                    <td><span class="status-${item.status.toLowerCase()}">${item.status}</span></td>
+                    <td>${item.po}</td>
+                    <td class="font-medium">${item.inv}</td>
+                    <td class="text-slate-400">${item.auth}</td>
+                    <td>${item.date}</td>
+                    <td class="font-bold">${item.supplier}</td>
+                    <td class="text-right font-bold">$ ${item.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="text-center">
+                        <i onclick="openDetail(${item.id})" data-lucide="edit-3" class="w-4 h-4 text-blue-400 mx-auto cursor-pointer hover:text-blue-600 transition-colors"></i>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Filter Logic
+        const filterToggle = document.getElementById('filterToggle');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const applyBtn = document.getElementById('applyFilters');
+        const clearBtn = document.getElementById('clearFilters');
+
+        if (filterToggle) filterToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterDropdown.classList.toggle('hidden-dropdown');
+        });
+
+        if (clearBtn) clearBtn.addEventListener('click', () => {
+            document.querySelectorAll('.supplier-filter, .status-filter').forEach(cb => cb.checked = true);
+            currentFilteredData = [...creditMemoData];
+            populateTable();
+            filterDropdown.classList.add('hidden-dropdown');
+        });
+
+        if (applyBtn) applyBtn.addEventListener('click', () => {
+            const selectedSuppliers = Array.from(document.querySelectorAll('.supplier-filter:checked')).map(cb => cb.value);
+            const selectedStatuses = Array.from(document.querySelectorAll('.status-filter:checked')).map(cb => cb.value);
+
+            currentFilteredData = creditMemoData.filter(item => {
+                const sMatch = selectedSuppliers.includes('All') || selectedSuppliers.includes(item.supplier);
+                const stMatch = selectedStatuses.includes('All') || selectedStatuses.includes(item.status);
+                return sMatch && stMatch;
+            });
+
+            populateTable();
+            filterDropdown.classList.add('hidden-dropdown');
+        });
+
+        // Detail View Functions
+       function openDetail(id) {
+    const item = creditMemoData.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('listView').classList.remove('view-active');
+    document.getElementById('detailView').classList.add('view-active');
+
+    // Update Header Cards
+    document.getElementById('detSupplier').innerText = item.supplier;
+    document.getElementById('detDate').innerText = item.date;
+    document.getElementById('detPo').innerText = item.po;
+    document.getElementById('detInv').innerText = item.inv;
+    document.getElementById('detCreditNo').innerText = item.creditNo;
+    //document.getElementById('detType').innerText = item.creditType;
+
+    // 1. Array of 8 Dummy Items for the Detail Table
+    const detailItems = [
+        { sku: '1130858', name: 'SAUCE BBQ', price: 35.15, ship: 13, recv: 3.0, tax: 0.00 },
+        { sku: '1019484', name: 'BACON CRUMBLE FZN', price: 94.33, ship: 5, recv: 1.0, tax: 12.00 },
+        { sku: '1246390', name: 'BAG CRAZY BREAD', price: 104.32, ship: 10, recv: 2.0, tax: 6.38 },
+        { sku: '002', name: 'BLUE BOX FEE', price: 141.40, ship: 1, recv: 1.0, tax: 0.00 },
+        { sku: '1504250', name: 'BOX CUSTOM PIZZA', price: 55.44, ship: 50, recv: 40.0, tax: 13.87 },
+        { sku: '1258440', name: 'BOX PIZZA 14IN', price: 24.11, ship: 100, recv: 90.0, tax: 4.42 },
+        { sku: '1272657', name: 'BOX PIZZA DD DISH', price: 38.45, ship: 20, recv: 18.0, tax: 40.16 },
+        { sku: '1130895', name: 'BOX PIZZA PORTAL', price: 34.91, ship: 10, recv: 8.0, tax: 0.00 }
+    ];
+
+    // Update Total Items Count
+    document.getElementById('detItemCount').innerText = String(detailItems.length).padStart(2, '0');
+
+    let totalAmount = 0;
+    const itemBody = document.getElementById('detItemBody');
+    
+    itemBody.innerHTML = detailItems.map(di => {
+        const creditAmt = (di.ship - di.recv) * di.price;
+        totalAmount += creditAmt;
+        return `
+            <tr class="data-row">
+                <td>${di.sku}</td>
+                <td class="font-bold text-blue-500 uppercase">${di.name}</td>
+                <td class="text-center font-bold">$ ${di.price.toFixed(2)}</td>
+                <td class="text-center font-bold">${di.ship}</td>
+                <td class="text-center">
+                    <span class="text-[10px] font-bold text-slate-500">${di.recv.toFixed(4)}</span>
+                </td>
+                <td class="text-center"><span class="text-slate-400">$ ${creditAmt.toFixed(2)}</span></td>
+                <td class="text-center"><span class="text-slate-400">$ ${di.tax.toFixed(2)}</span></td>
+                <td class="text-center"><span class="text-slate-600 font-bold">$ ${creditAmt.toFixed(2)}</span></td>
+                <td class="text-center"><i data-lucide="trash-2" class="w-4 h-4 text-rose-300 mx-auto cursor-pointer hover:text-rose-500"></i></td>
+            </tr>
+        `;
+    }).join('');
+
+    document.getElementById('detSubTotal').innerText = `$ ${totalAmount.toFixed(2)}`;
+    document.getElementById('detTotalCredit').innerText = `$ ${totalAmount.toFixed(2)}`;
+    
+    lucide.createIcons();
+}
+
+        function closeDetail() {
+            document.getElementById('detailView').classList.remove('view-active');
+            document.getElementById('listView').classList.add('view-active');
+        }
+
+        window.onclick = (e) => {
+            if (filterDropdown && !filterDropdown.contains(e.target) && e.target !== filterToggle) {
+                filterDropdown.classList.add('hidden-dropdown');
+            }
+        };
+
+        window.onload = () => populateTable();
+    </script>
+<script>
+  function toggleModDate(e){e.stopPropagation();var f=document.getElementById('modFilterPanel');if(f)f.classList.add('hidden');document.getElementById('modDatePanel').classList.toggle('hidden');}
+  function closeModDate(){document.getElementById('modDatePanel').classList.add('hidden');}
+  function applyModDate(){var f=document.getElementById('modDateFrom').value,t=document.getElementById('modDateTo').value,fmt=function(s){return new Date(s+'T00:00').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});};if(f&&t)document.getElementById('modDateLabel').textContent=fmt(f)+' - '+fmt(t);closeModDate();}
+  function toggleModFilter(e){e.stopPropagation();var d=document.getElementById('modDatePanel');if(d)d.classList.add('hidden');document.getElementById('modFilterPanel').classList.toggle('hidden');}
+  function modSearchRows(q){q=(q||'').trim().toLowerCase();document.querySelectorAll('.mod-box tbody tr').forEach(function(r){r.style.display=(!q||r.textContent.toLowerCase().includes(q))?'':'none';});}
+  document.addEventListener('click',function(e){var fp=document.getElementById('modFilterPanel');if(fp&&!fp.classList.contains('hidden')&&!fp.parentElement.contains(e.target))fp.classList.add('hidden');var dp=document.getElementById('modDatePanel'),dw=document.getElementById('modDateWrap');if(dp&&!dp.classList.contains('hidden')&&dw&&!dw.contains(e.target))dp.classList.add('hidden');});
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>
+<script>
+(function(){
+  var MOD_PER=15, modPage=1;
+  function modApplyPagination(){
+    var box=document.querySelector('.mod-box'); if(!box) return;
+    var rows=Array.prototype.slice.call(box.querySelectorAll('tbody tr'));
+    var total=rows.length, pages=Math.max(1,Math.ceil(total/MOD_PER));
+    if(modPage>pages)modPage=pages; if(modPage<1)modPage=1;
+    rows.forEach(function(r,i){ r.style.display=(i>=(modPage-1)*MOD_PER && i<modPage*MOD_PER)?'':'none'; });
+    var s=total?((modPage-1)*MOD_PER+1):0, e=Math.min(modPage*MOD_PER,total);
+    var info=document.getElementById('modPageInfo'); if(info)info.innerHTML='Showing <span class="font-bold text-slate-700">'+s+'–'+e+'</span> of <span class="font-bold text-slate-700">'+total+'</span> entries';
+    var nav=document.getElementById('modPageBtns');
+    if(nav){var h='<button onclick="modGoPage('+(modPage-1)+')" class="px-2.5 py-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50" '+(modPage<=1?'disabled':'')+'><i class="fas fa-chevron-left text-[10px]"></i></button>';
+      for(var p=1;p<=pages;p++){h+='<button onclick="modGoPage('+p+')" class="px-3 py-1 rounded border font-bold '+(p===modPage?'border-blue-500 bg-blue-500 text-white':'border-slate-200 text-slate-600 hover:bg-slate-50')+'">'+p+'</button>';}
+      h+='<button onclick="modGoPage('+(modPage+1)+')" class="px-2.5 py-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50" '+(modPage>=pages?'disabled':'')+'><i class="fas fa-chevron-right text-[10px]"></i></button>';
+      nav.innerHTML=h;}
+    if(window.lucide)lucide.createIcons();
+  }
+  window.modGoPage=function(p){modPage=p;modApplyPagination();};
+  window.modApplyPagination=modApplyPagination;
+  window.addEventListener('load',function(){setTimeout(modApplyPagination,200);});
+})();
+</script>
+</body>
+</html>
