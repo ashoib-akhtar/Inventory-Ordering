@@ -1,0 +1,647 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On Hand Inventory | Restaurant Operations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto','Helvetica','Arial',sans-serif;
+            font-size: 14px;
+            background-color: #f8fafc;
+            height: 100vh;
+            overflow: hidden;
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* Sidebar Styling */
+        aside {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 64px; 
+            overflow: hidden;
+            white-space: nowrap;
+            background-color: #0f172a; 
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+        aside:hover { width: 260px; }
+
+        .sidebar-logo-area {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+
+        .logo-box {
+            width: 34px; 
+            height: 34px;
+            background-color: #2563eb;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            height: 48px;
+            padding: 0 20px; 
+            color: #94a3b8; 
+            text-decoration: none;
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .menu-item i, .menu-item svg {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            flex-shrink: 0;
+        }
+
+        .menu-text {
+            opacity: 0;
+            margin-left: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        aside:hover .menu-text { 
+            opacity: 1; 
+            pointer-events: auto;
+        }
+
+        .menu-item.active {
+            background-color: #1e293b; 
+            color: #ffffff;
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: #3b82f6;
+        }
+
+        .menu-item:hover:not(.active) {
+            color: #e2e8f0;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Content Area Table Styling */
+        .content-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            background: white;
+            position: relative;
+        }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #f1f5f9;
+            z-index: 40;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        tbody td {
+            padding: 5px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 400;
+            word-wrap: break-word;
+        }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* Tooltip implementation pointing DOWN */
+        .alert-info-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .alert-info-container:hover .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-box {
+            visibility: hidden;
+            width: 280px; 
+            background-color: #1e293b;
+            color: #fff;
+            text-align: left;
+            border-radius: 4px;
+            padding: 10px 14px;
+            position: absolute;
+            z-index: 150;
+            top: 180%; 
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 11px;
+            font-weight: 400;
+            line-height: 1.5;
+            pointer-events: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            white-space: normal;
+        }
+        .tooltip-box::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent #1e293b transparent;
+        }
+
+        /* Error Toast (Validation Message) - Top Right corner */
+        #errorToast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            transform: translateX(130%);
+            background-color: #dc2626;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 9999;
+            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.35);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+            max-width: 400px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        #errorToast.show { transform: translateX(0); }
+
+        /* Filter Popup Styling */
+        #filterPopup {
+            position: absolute;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            z-index: 110;
+            display: none;
+            padding: 15px;
+        }
+
+        /* Print Dropdown Styling */
+        #printDropdown {
+            position: absolute;
+            top: 42px;
+            right: 0;
+            width: 210px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 110;
+        }
+        .print-option {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #475569;
+            cursor: pointer;
+        }
+        .print-option:hover { background-color: #f1f5f9; }
+
+        /* PAR Level Boxes Style */
+        .par-box {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 4px 10px;
+            width: 70px;
+            text-align: center;
+            font-size: 12px;
+            outline: none;
+        }
+        .par-box:focus { border-color: #3b82f6; }
+
+        #searchInput {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            width: 130px;
+            margin-left: 8px;
+            outline: none;
+        }
+/* ── MERGED-DASHBOARD SIDEBAR + HEADER (consistency) ── */
+.cs::-webkit-scrollbar{width:5px;height:5px}
+.cs::-webkit-scrollbar-track{background:transparent}
+.cs::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+.cs:hover::-webkit-scrollbar-thumb{background:#94a3b8}
+aside{width:64px;transition:width 0.28s cubic-bezier(.4,0,.2,1);overflow:hidden;white-space:nowrap;display:flex;flex-direction:column;background:#0f172a;flex-shrink:0}
+aside:hover{width:260px}
+.sb-logo{height:56px;display:flex;align-items:center;padding:0 16px;background:#1e293b;flex-shrink:0}
+.logo-box{width:32px;height:32px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.menu-item{display:flex;align-items:center;height:40px;padding:0 20px;color:#94a3b8;transition:all .18s;border-left:3px solid transparent;border-right:none;border-top:none;border-bottom:none;text-decoration:none;cursor:pointer;background:none;width:100%;text-align:left}
+.menu-item svg,.menu-item i{width:20px;min-width:20px;flex-shrink:0}
+.mt{opacity:0;margin-left:12px;font-size:12.5px;font-weight:500;transition:opacity .18s;white-space:nowrap;color:#94a3b8}
+aside:hover .mt{opacity:1}
+.menu-item:hover,.menu-item.active{background:rgba(59,130,246,.1);color:#fff;border-left-color:#3b82f6}
+.menu-item:hover .mt,.menu-item.active .mt{color:#e2e8f0}
+.sb-section{font-size:9px;font-weight:700;color:#64748b;letter-spacing:.12em;padding:10px 20px 3px;text-transform:capitalize;opacity:0;transition:opacity .18s;white-space:nowrap}
+aside:hover .sb-section{opacity:1}
+header{height:44px;background:#0f172a;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 20px;border-bottom:1px solid #1e293b;flex-shrink:0}
+    </style>
+</head>
+<body class="flex">
+
+    <!-- Validation Error Toast -->
+    <div id="errorToast">
+        <i data-lucide="x-circle" class="w-5 h-5"></i>
+        <span id="errorMessage" class=" text-[12px]">You can not enable Days On Hand Alerts for more than 10 items.</span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="h-screen shadow-2xl z-30 flex-shrink-0">
+  <div class="sb-logo">
+    <img src="https://agcdn.altametrics.com/agrelease/agassets/v1/assets/images/logo/headerLogo/zipInventory.png" alt="Zip Inventory" style="height:34px;width:auto;object-fit:contain">
+    
+  </div>
+  <nav class="flex flex-col flex-1 overflow-y-auto cs pt-2">
+    <a href="index.html" class="menu-item">
+      <i data-lucide="home" class="w-5 h-5"></i><span class="mt">Dashboard</span>
+    </a>
+    <div class="sb-section mt-3">Inventory</div>
+    <a href="Inv-Invoice.html" class="menu-item"><i data-lucide="file-text" class="w-5 h-5"></i><span class="mt">Invoices</span></a>
+    <a href="Inv-CreditMemo.html" class="menu-item"><i data-lucide="wallet" class="w-5 h-5"></i><span class="mt">Credit Memo</span></a>
+    <a href="Inv-Transfers.html" class="menu-item"><i data-lucide="repeat" class="w-5 h-5"></i><span class="mt">Transfers</span></a>
+    <a href="Inv-Inventory.html" class="menu-item"><i data-lucide="clipboard-check" class="w-5 h-5"></i><span class="mt">Inventory Count</span></a>
+    <a href="#" class="menu-item"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="mt">Actual Sales</span></a>
+    <a href="#" class="menu-item"><i data-lucide="line-chart" class="w-5 h-5"></i><span class="mt">Forecasted Sales</span></a>
+    <a href="Inv-MenuMix.html" class="menu-item"><i data-lucide="utensils-crossed" class="w-5 h-5"></i><span class="mt">Menu Mix</span></a>
+    <a href="Inv-OnHand.html" class="menu-item active"><i data-lucide="package" class="w-5 h-5"></i><span class="mt">On Hand</span></a>
+    <a href="Inv-Waste.html" class="menu-item"><i data-lucide="trash-2" class="w-5 h-5"></i><span class="mt">Waste</span></a>
+
+    <div class="sb-section mt-3">Ordering</div>
+    <a href="Ord-Ordering-standalone.html" class="menu-item"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span class="mt">Ordering</span></a>
+    <a href="Ord-OrderGuide-standalone.html" class="menu-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="mt">Order Guide</span></a>
+    <a href="Ord-Historical-standalone.html" class="menu-item"><i data-lucide="history" class="w-5 h-5"></i><span class="mt">Historical Orders</span></a>
+    <a href="Ord-PriceList-standalone.html" class="menu-item"><i data-lucide="tag" class="w-5 h-5"></i><span class="mt">Supplier Item Price List</span></a>
+    <a href="Ord-Analysis-standalone.html" class="menu-item"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="mt">Analysis</span></a>
+
+    <div class="mt-auto border-t border-slate-800/50 pt-2 mb-4">
+      <a href="#" class="menu-item"><i data-lucide="users" class="w-5 h-5"></i><span class="mt">Employees</span></a>
+      <a href="Inv-Reports.html" class="menu-item"><i data-lucide="file-bar-chart" class="w-5 h-5"></i><span class="mt">Reports</span></a>
+      <a href="#" class="menu-item"><i data-lucide="settings" class="w-5 h-5"></i><span class="mt">Settings</span></a>
+    </div>
+  </nav>
+</aside>
+
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Top Nav -->
+<header>
+  <div class="flex items-center gap-5 text-xs">
+    <div class="flex items-center gap-1.5 cursor-pointer group">
+      <i data-lucide="grid-2x2" class="w-3.5 h-3.5 text-slate-400"></i>
+      <span class="font-semibold text-slate-300 group-hover:text-white transition-colors">My Apps</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+    <div class="flex items-center gap-1.5 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700 cursor-pointer">
+      <i data-lucide="map-pin" class="w-3 h-3 text-blue-400"></i>
+      <span class="font-semibold text-slate-200 text-[11px]">Costa Mesa</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+  </div>
+  <div class="flex items-center justify-center gap-2 text-[11px]">
+    <i data-lucide="cloud-sun" class="w-4 h-4 text-yellow-400"></i>
+    <span id="liveTime" class="font-semibold text-slate-200 font-mono">09:20 AM</span>
+    <span class="text-slate-500 text-[9px] font-bold tracking-widest">America/Los Angeles</span>
+  </div>
+  <div class="flex items-center gap-4 justify-end">
+    <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 cursor-pointer">
+      <i data-lucide="building-2" class="w-3 h-3 text-blue-400"></i>
+      <span class="font-bold text-[10px] text-slate-200 tracking-widest">Corporate</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-8 h-8 rounded-full ring-2 ring-slate-700 p-0.5 bg-slate-600">
+  </div>
+</header>
+
+<div class="px-6 py-2 flex items-center justify-between bg-white border-b border-slate-200">
+  <div class="flex items-center gap-3">
+    <div class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="package" class="w-4 h-4"></i></div>
+    <h1 class="text-base font-bold text-slate-800 leading-none">On Hand</h1>
+  </div>
+</div>
+<div class="relative px-6 py-2 bg-slate-50 flex items-center border-b border-slate-200">
+  <div class="relative" id="modDateWrap">
+    <button onclick="toggleModDate(event)" class="flex items-center bg-white border border-slate-200 rounded-full px-4 py-1.5 shadow-sm text-[13px] font-semibold text-slate-600 hover:bg-slate-50"><i class="far fa-calendar-alt text-slate-400 mr-2"></i><span id="modDateLabel">Feb 01, 2026 - Feb 09, 2026</span></button>
+    <div id="modDatePanel" class="hidden absolute left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+      <div class="text-[13px] font-bold text-slate-700 mb-2">Select Date Range</div>
+      <label class="block text-[11px] font-semibold text-slate-500 mb-1">From</label>
+      <input type="date" id="modDateFrom" value="2026-02-01" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[13px] mb-2 text-slate-600">
+      <label class="block text-[11px] font-semibold text-slate-500 mb-1">To</label>
+      <input type="date" id="modDateTo" value="2026-02-09" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[13px] mb-3 text-slate-600">
+      <div class="flex gap-2"><button onclick="closeModDate()" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-1.5 text-[12px] font-bold hover:bg-slate-200">Cancel</button><button onclick="applyModDate()" class="flex-1 bg-blue-500 text-white rounded-lg py-1.5 text-[12px] font-bold hover:bg-blue-600">Apply</button></div>
+    </div>
+  </div>
+  <div class="absolute left-1/2 -translate-x-1/2 z-10"><div class="relative">
+    <button onclick="toggleModFilter(event)" class="bg-white border border-slate-200 px-5 py-1.5 rounded-full text-[13px] font-bold text-slate-500 uppercase tracking-wide flex items-center hover:bg-slate-50">Filters <i class="fas fa-sliders-h ml-1 text-slate-300"></i></button>
+    <div id="modFilterPanel" class="hidden absolute left-1/2 -translate-x-1/2 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+      <div class="text-[13px] font-bold text-slate-700 mb-2">Filter</div>
+      <input type="text" oninput="modSearchRows(this.value)" placeholder="Search records…" class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] text-slate-600 mb-1">
+      <p class="text-[10px] text-slate-400">Type to filter rows in the table.</p>
+    </div>
+  </div></div>
+</div>
+
+        <!-- Table Area -->
+        <div class="content-scroll-area custom-scrollbar mod-box bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th style="width: 220px;">
+                            <div class="flex items-center justify-between">
+                                <span>Ingredient ID</span>
+                                <div class="flex items-center">
+                                    <i data-lucide="search" class="w-3 h-3 cursor-pointer hover:text-blue-500" onclick="toggleSearch()"></i>
+                                    <input type="text" id="searchInput" class="hidden" placeholder="Search..." oninput="handleSearch()">
+                                </div>
+                            </div>
+                        </th>
+                        <th style="width: 200px;">Name</th>
+                        <th>Last Posted Inv.</th>
+                        <th style="width: 165px;">Order Type</th>
+                        <th class="text-center">Reporting Unit</th>
+                        <th class="text-right">On Hand</th>
+                        <th class="text-right">On Hand (Cases)</th>
+                        <th class="text-center">Days On Hand</th>
+                        <th class="text-right">On Hand($)</th>
+                        <th class="text-center">
+                            <div class="alert-info-container">
+                                <span>Enable Alert</span>
+                                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 ml-1"></i>
+                                <div class="tooltip-box">
+                                    Items will populate on the dashboard under the Days on Hand section when the alert is enabled.
+                                </div>
+                            </div>
+                        </th>
+                        <th class="text-center">Minimum Stock</th>
+                        <th class="text-center">Reorder Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody"></tbody>
+            </table>
+            <div class="flex items-center justify-between px-6 py-3 border-t border-slate-200 bg-white text-[12px] text-slate-500 rounded-b-xl">
+              <span id="pageInfo">Showing <span class="font-bold text-slate-700">0</span> entries</span>
+              <div class="flex items-center gap-1" id="pageButtons"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const inventoryData = [
+            { id: 'APPS Crab Rangoon', name: 'Crab Rangoon', date: '02/08/2026', type: 'Actual Usage (Per $1000)', unit: 'ea', onHand: '775.68', cases: '5.00', days: '9', value: '305.82', min: '-', reorder: '-', alertEnabled: true },
+            { id: 'APPS Edamame', name: 'Edamame', date: '02/08/2026', type: 'Actual Usage (Per $1000)', unit: 'lb', onHand: '38.44', cases: '2.00', days: '23', value: '98.06', min: '-', reorder: '-', alertEnabled: true },
+            { id: 'BASES Rice White', name: 'Rice White', date: '02/08/2026', type: 'Actual Usage (Per $1000)', unit: 'lb', onHand: '395.23', cases: '7.00', days: '71', value: '323.54', min: '-', reorder: '-', alertEnabled: false },
+            { id: 'CLEANING Bleach', name: 'Bleach', date: '09/30/2025', type: 'PAR Level', unit: 'ea', onHand: '0.00', cases: '-', days: '0', value: '0.00', min: '0', reorder: '0', alertEnabled: false },
+            { id: 'CLEANING Degreaser', name: 'Degreaser Heavy Duty', date: '08/31/2024', type: 'PAR Level', unit: 'ea', onHand: '0.00', cases: '-', days: '0', value: '0.00', min: '0', reorder: '0', alertEnabled: false },
+            { id: 'CLEANING Dish Detergent', name: 'Diversey Dish Detergent Nova L6', date: '03/31/2024', type: 'PAR Level', unit: 'ea', onHand: '0.00', cases: '-', days: '0', value: '0.00', min: '0', reorder: '0', alertEnabled: false },
+            { id: 'CLEANING Glass Multi', name: 'Diversey Glass & Multi Glance', date: '-', type: 'PAR Level', unit: 'ea', onHand: '0.00', cases: '-', days: '0', value: '0.00', min: '0', reorder: '0', alertEnabled: false }
+        ];
+
+        // dummy data load (40 items total)
+        for(let i=1; i<=15; i++) {
+            const types = ['Actual Usage (Per $1000)', 'PAR Level', 'None'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            inventoryData.push({
+                id: `ITEM-${1000+i}`, 
+                name: `Bulk Item ${i}`, 
+                date: '01/15/2026',
+                type: type,
+                unit: 'ea',
+                onHand: (Math.random() * 100).toFixed(2),
+                cases: (Math.random() * 10).toFixed(2),
+                days: Math.floor(Math.random()*10),
+                value: (Math.random() * 500).toFixed(2),
+                min: type === 'PAR Level' ? '0' : '-',
+                reorder: type === 'PAR Level' ? '0' : '-',
+                alertEnabled: false
+            });
+        }
+
+        let filtered = [...inventoryData];
+        let currentPage = 1;
+        const pageSize = 15;
+
+        function goToPage(p) {
+            currentPage = p;
+            renderTable();
+        }
+
+        function renderPagination() {
+            const total = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, total);
+
+            document.getElementById('pageInfo').innerHTML =
+                `Showing <span class="font-bold text-slate-700">${start}–${end}</span> of <span class="font-bold text-slate-700">${total}</span> entries`;
+
+            const box = document.getElementById('pageButtons');
+            box.innerHTML = '';
+            const btn = (label, page, opts = {}) => {
+                const b = document.createElement('button');
+                b.innerHTML = label;
+                b.disabled = !!opts.disabled;
+                if (opts.active) {
+                    b.className = 'px-3 py-1 rounded border border-blue-500 bg-blue-500 text-white font-bold';
+                } else if (opts.disabled) {
+                    b.className = 'px-2.5 py-1 rounded border border-slate-200 text-slate-300';
+                } else {
+                    b.className = 'px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold';
+                    b.onclick = () => goToPage(page);
+                }
+                box.appendChild(b);
+            };
+
+            btn('<i class="fas fa-chevron-left text-[10px]"></i>', currentPage - 1, { disabled: currentPage === 1 });
+            for (let p = 1; p <= totalPages; p++) btn(String(p), p, { active: p === currentPage });
+            btn('<i class="fas fa-chevron-right text-[10px]"></i>', currentPage + 1, { disabled: currentPage === totalPages });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = '';
+
+            const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const pageRows = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+            pageRows.forEach(row => {
+                const tr = document.createElement('tr');
+                const isPar = row.type.includes('PAR Level');
+                
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td>${row.name}</td>
+                    <td>${row.date}</td>
+                    <td class="whitespace-nowrap">${row.type}</td>
+                    <td class="text-center">${row.unit}</td>
+                    <td class="text-right">${row.onHand}</td>
+                    <td class="text-right">${row.cases}</td>
+                    <td class="text-center">${row.days}</td>
+                    <td class="text-right">$ ${row.value}</td>
+                    <td class="text-center">
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${row.alertEnabled ? 'checked' : ''} onchange="handleToggle(this, '${row.id}')">
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td class="text-center">${isPar ? `<input type="text" value="${row.min}" class="par-box">` : `<span class="text-slate-300">-</span>`}</td>
+                    <td class="text-center">${isPar ? `<input type="text" value="${row.reorder}" class="par-box">` : `<span class="text-slate-300">-</span>`}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+            renderPagination();
+        }
+
+        function handleToggle(checkbox, id) {
+            const enabledCount = inventoryData.filter(i => i.alertEnabled).length;
+            const item = inventoryData.find(i => i.id === id);
+
+            if (checkbox.checked && enabledCount >= 100) {
+                checkbox.checked = false;
+                showValidation();
+            } else {
+                item.alertEnabled = checkbox.checked;
+            }
+        }
+
+        function showValidation() {
+            const toast = document.getElementById('errorToast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        function toggleSearch() {
+            const input = document.getElementById('searchInput');
+            input.classList.toggle('hidden');
+            if (!input.classList.contains('hidden')) input.focus();
+        }
+
+        function handleSearch() {
+            applyFilters(false);
+        }
+
+        function toggleFilterPopup() {
+            const p = document.getElementById('filterPopup');
+            p.style.display = p.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function clearFilters() {
+            document.getElementById('filterAll').checked = true;
+            document.getElementById('filterActual').checked = false;
+            document.getElementById('filterPAR').checked = false;
+            document.getElementById('filterAlertOnly').checked = false;
+            document.getElementById('searchInput').value = '';
+            applyFilters(true);
+        }
+
+        function applyFilters(shouldClose = false) {
+            const query = (document.getElementById('searchInput')?.value || '').toLowerCase();
+
+            filtered = inventoryData.filter(i =>
+                i.id.toLowerCase().includes(query) || i.name.toLowerCase().includes(query)
+            );
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        window.onload = () => {
+            lucide.createIcons();
+            renderTable();
+        };
+    </script>
+<script>
+  function toggleModDate(e){e.stopPropagation();var f=document.getElementById('modFilterPanel');if(f)f.classList.add('hidden');document.getElementById('modDatePanel').classList.toggle('hidden');}
+  function closeModDate(){document.getElementById('modDatePanel').classList.add('hidden');}
+  function applyModDate(){var f=document.getElementById('modDateFrom').value,t=document.getElementById('modDateTo').value,fmt=function(s){return new Date(s+'T00:00').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});};if(f&&t)document.getElementById('modDateLabel').textContent=fmt(f)+' - '+fmt(t);closeModDate();}
+  function toggleModFilter(e){e.stopPropagation();var d=document.getElementById('modDatePanel');if(d)d.classList.add('hidden');document.getElementById('modFilterPanel').classList.toggle('hidden');}
+  function modSearchRows(q){q=(q||'').trim().toLowerCase();document.querySelectorAll('.mod-box tbody tr').forEach(function(r){r.style.display=(!q||r.textContent.toLowerCase().includes(q))?'':'none';});}
+  document.addEventListener('click',function(e){var fp=document.getElementById('modFilterPanel');if(fp&&!fp.classList.contains('hidden')&&!fp.parentElement.contains(e.target))fp.classList.add('hidden');var dp=document.getElementById('modDatePanel'),dw=document.getElementById('modDateWrap');if(dp&&!dp.classList.contains('hidden')&&dw&&!dw.contains(e.target))dp.classList.add('hidden');});
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>
+</body>
+</html>

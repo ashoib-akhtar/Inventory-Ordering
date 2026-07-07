@@ -1,0 +1,823 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waste Management | Restaurant Operations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto','Helvetica','Arial',sans-serif;
+            font-size: 14px;
+            background-color: #f1f5f9;
+            height: 100vh;
+            overflow: hidden;
+            color: #1e293b;
+        }
+
+        /* Sidebar hover expansion logic */
+        aside {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 64px;
+            z-index: 50;
+        }
+        aside:hover { width: 260px; }
+
+        .menu-text {
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 0.2s ease;
+            display: none;
+        }
+        aside:hover .menu-text { opacity: 1; display: inline; }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            height: 44px;
+            padding: 0 20px;
+            color: #94a3b8;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+        .menu-item.active {
+            background-color: #1e293b;
+            color: white;
+            border-left-color: #3b82f6;
+        }
+
+        /* Scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Table Specifics */
+        .waste-table th {
+            font-size: 11px;
+            text-transform: capitalize;
+            color: #64748b;
+            font-weight: 600;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            text-align: left;
+            background: #f8fafc;
+            white-space: nowrap;
+        }
+        .waste-table td {
+            font-size: 13px;
+            padding: 10px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+        .data-row:hover { background-color: #f8fafc; cursor: pointer; }
+
+        /* Detail View Styles */
+        .detail-table th {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 16px;
+        }
+
+        /* Dropdown Visibility */
+        .hidden-dropdown { opacity: 0; transform: scale(0.95) translateY(-10px); pointer-events: none; }
+        #filterDropdown { transform-origin: top; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .custom-checkbox {
+            appearance: none; width: 18px; height: 18px; border: 2px solid #e2e8f0;
+            border-radius: 6px; cursor: pointer; position: relative; background: white; transition: all 0.2s;
+        }
+        .custom-checkbox:checked { background-color: #2563eb; border-color: #2563eb; }
+        .custom-checkbox:checked::after {
+            content: '✓'; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); color: white; font-size: 11px; font-weight: bold;
+        }
+
+        .view-container { display: none; flex-direction: column; height: 100%; }
+        .view-active { display: flex; }
+/* ── MERGED-DASHBOARD SIDEBAR + HEADER (consistency) ── */
+.cs::-webkit-scrollbar{width:5px;height:5px}
+.cs::-webkit-scrollbar-track{background:transparent}
+.cs::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+.cs:hover::-webkit-scrollbar-thumb{background:#94a3b8}
+aside{width:64px;transition:width 0.28s cubic-bezier(.4,0,.2,1);overflow:hidden;white-space:nowrap;display:flex;flex-direction:column;background:#0f172a;flex-shrink:0}
+aside:hover{width:260px}
+.sb-logo{height:56px;display:flex;align-items:center;padding:0 16px;background:#1e293b;flex-shrink:0}
+.logo-box{width:32px;height:32px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.menu-item{display:flex;align-items:center;height:40px;padding:0 20px;color:#94a3b8;transition:all .18s;border-left:3px solid transparent;border-right:none;border-top:none;border-bottom:none;text-decoration:none;cursor:pointer;background:none;width:100%;text-align:left}
+.menu-item svg,.menu-item i{width:20px;min-width:20px;flex-shrink:0}
+.mt{opacity:0;margin-left:12px;font-size:12.5px;font-weight:500;transition:opacity .18s;white-space:nowrap;color:#94a3b8}
+aside:hover .mt{opacity:1}
+.menu-item:hover,.menu-item.active{background:rgba(59,130,246,.1);color:#fff;border-left-color:#3b82f6}
+.menu-item:hover .mt,.menu-item.active .mt{color:#e2e8f0}
+.sb-section{font-size:9px;font-weight:700;color:#64748b;letter-spacing:.12em;padding:10px 20px 3px;text-transform:capitalize;opacity:0;transition:opacity .18s;white-space:nowrap}
+aside:hover .sb-section{opacity:1}
+header{height:44px;background:#0f172a;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 20px;border-bottom:1px solid #1e293b;flex-shrink:0}
+/* vertical grid lines in list table */
+.mod-box table{border-collapse:collapse}
+.mod-box table th,.mod-box table td{border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0}
+.mod-box table th:last-child,.mod-box table td:last-child{border-right:none}
+.mod-box table thead th{padding:9px 14px}
+.mod-box table tbody td{padding:8px 14px}
+    </style>
+</head>
+<body class="flex">
+
+    <!-- Hover Sidebar -->
+    <aside class="h-screen shadow-2xl z-30 flex-shrink-0">
+  <div class="sb-logo">
+    <img src="https://agcdn.altametrics.com/agrelease/agassets/v1/assets/images/logo/headerLogo/zipInventory.png" alt="Zip Inventory" style="height:34px;width:auto;object-fit:contain">
+    
+  </div>
+  <nav class="flex flex-col flex-1 overflow-y-auto cs pt-2">
+    <a href="index.html" class="menu-item">
+      <i data-lucide="home" class="w-5 h-5"></i><span class="mt">Dashboard</span>
+    </a>
+    <div class="sb-section mt-3">Inventory</div>
+    <a href="Inv-Invoice.html" class="menu-item"><i data-lucide="file-text" class="w-5 h-5"></i><span class="mt">Invoices</span></a>
+    <a href="Inv-CreditMemo.html" class="menu-item"><i data-lucide="wallet" class="w-5 h-5"></i><span class="mt">Credit Memo</span></a>
+    <a href="Inv-Transfers.html" class="menu-item"><i data-lucide="repeat" class="w-5 h-5"></i><span class="mt">Transfers</span></a>
+    <a href="Inv-Inventory.html" class="menu-item"><i data-lucide="clipboard-check" class="w-5 h-5"></i><span class="mt">Inventory Count</span></a>
+    <a href="#" class="menu-item"><i data-lucide="trending-up" class="w-5 h-5"></i><span class="mt">Actual Sales</span></a>
+    <a href="#" class="menu-item"><i data-lucide="line-chart" class="w-5 h-5"></i><span class="mt">Forecasted Sales</span></a>
+    <a href="Inv-MenuMix.html" class="menu-item"><i data-lucide="utensils-crossed" class="w-5 h-5"></i><span class="mt">Menu Mix</span></a>
+    <a href="Inv-OnHand.html" class="menu-item"><i data-lucide="package" class="w-5 h-5"></i><span class="mt">On Hand</span></a>
+    <a href="Inv-Waste.html" class="menu-item active"><i data-lucide="trash-2" class="w-5 h-5"></i><span class="mt">Waste</span></a>
+
+    <div class="sb-section mt-3">Ordering</div>
+    <a href="Ord-Ordering-standalone.html" class="menu-item"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span class="mt">Ordering</span></a>
+    <a href="Ord-OrderGuide-standalone.html" class="menu-item"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="mt">Order Guide</span></a>
+    <a href="Ord-Historical-standalone.html" class="menu-item"><i data-lucide="history" class="w-5 h-5"></i><span class="mt">Historical Orders</span></a>
+    <a href="Ord-PriceList-standalone.html" class="menu-item"><i data-lucide="tag" class="w-5 h-5"></i><span class="mt">Supplier Item Price List</span></a>
+    <a href="Ord-Analysis-standalone.html" class="menu-item"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="mt">Analysis</span></a>
+
+    <div class="mt-auto border-t border-slate-800/50 pt-2 mb-4">
+      <a href="#" class="menu-item"><i data-lucide="users" class="w-5 h-5"></i><span class="mt">Employees</span></a>
+      <a href="Inv-Reports.html" class="menu-item"><i data-lucide="file-bar-chart" class="w-5 h-5"></i><span class="mt">Reports</span></a>
+      <a href="#" class="menu-item"><i data-lucide="settings" class="w-5 h-5"></i><span class="mt">Settings</span></a>
+    </div>
+  </nav>
+</aside>
+
+    <main class="flex-1 flex flex-col min-w-0">
+        <!-- Top Navigation Bar -->
+        <header>
+  <div class="flex items-center gap-5 text-xs">
+    <div class="flex items-center gap-1.5 cursor-pointer group">
+      <i data-lucide="grid-2x2" class="w-3.5 h-3.5 text-slate-400"></i>
+      <span class="font-semibold text-slate-300 group-hover:text-white transition-colors">My Apps</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+    <div class="flex items-center gap-1.5 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700 cursor-pointer">
+      <i data-lucide="map-pin" class="w-3 h-3 text-blue-400"></i>
+      <span class="font-semibold text-slate-200 text-[11px]">Costa Mesa</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+  </div>
+  <div class="flex items-center justify-center gap-2 text-[11px]">
+    <i data-lucide="cloud-sun" class="w-4 h-4 text-yellow-400"></i>
+    <span id="liveTime" class="font-semibold text-slate-200 font-mono">09:20 AM</span>
+    <span class="text-slate-500 text-[9px] font-bold tracking-widest">America/Los Angeles</span>
+  </div>
+  <div class="flex items-center gap-4 justify-end">
+    <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 cursor-pointer">
+      <i data-lucide="building-2" class="w-3 h-3 text-blue-400"></i>
+      <span class="font-bold text-[10px] text-slate-200 tracking-widest">Corporate</span>
+      <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+    </div>
+    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="w-8 h-8 rounded-full ring-2 ring-slate-700 p-0.5 bg-slate-600">
+  </div>
+</header>
+
+        <!-- VIEW 1: WASTE LIST -->
+        <div id="listView" class="view-container view-active">
+            <div class="p-6 flex-1 overflow-auto custom-scrollbar">
+			
+<div class="px-6 py-2 flex items-center justify-between bg-white border-b border-slate-200">
+  <div class="flex items-center gap-3">
+    <div class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></div>
+    <h1 class="text-base font-bold text-slate-800 leading-none">Waste</h1>
+  </div>
+  <button class="bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-1.5 rounded-full text-xs font-bold shadow-md flex items-center gap-1.5"><i class="fas fa-plus text-[10px]"></i> Add</button>
+</div>
+<div class="relative px-6 py-2 bg-slate-50 flex items-center border-b border-slate-200">
+  <div class="relative" id="modDateWrap">
+    <button onclick="toggleModDate(event)" class="flex items-center bg-white border border-slate-200 rounded-full px-4 py-1.5 shadow-sm text-[13px] font-semibold text-slate-600 hover:bg-slate-50"><i class="far fa-calendar-alt text-slate-400 mr-2"></i><span id="modDateLabel">Feb 01, 2026 - Feb 09, 2026</span></button>
+    <div id="modDatePanel" class="hidden absolute left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+      <div class="text-[13px] font-bold text-slate-700 mb-2">Select Date Range</div>
+      <label class="block text-[11px] font-semibold text-slate-500 mb-1">From</label>
+      <input type="date" id="modDateFrom" value="2026-02-01" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[13px] mb-2 text-slate-600">
+      <label class="block text-[11px] font-semibold text-slate-500 mb-1">To</label>
+      <input type="date" id="modDateTo" value="2026-02-09" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[13px] mb-3 text-slate-600">
+      <div class="flex gap-2"><button onclick="closeModDate()" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-1.5 text-[12px] font-bold hover:bg-slate-200">Cancel</button><button onclick="applyModDate()" class="flex-1 bg-blue-500 text-white rounded-lg py-1.5 text-[12px] font-bold hover:bg-blue-600">Apply</button></div>
+    </div>
+  </div>
+  <div class="absolute left-1/2 -translate-x-1/2 z-10"><div class="relative">
+    <button onclick="toggleModFilter(event)" class="bg-white border border-slate-200 px-5 py-1.5 rounded-full text-[13px] font-bold text-slate-500 uppercase tracking-wide flex items-center hover:bg-slate-50">Filters <i class="fas fa-sliders-h ml-1 text-slate-300"></i></button>
+    <div id="modFilterPanel" class="hidden absolute left-1/2 -translate-x-1/2 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3">
+      <div class="text-[13px] font-bold text-slate-700 mb-2">Filter</div>
+      <input type="text" oninput="modSearchRows(this.value)" placeholder="Search records…" class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] text-slate-600 mb-1">
+      <p class="text-[10px] text-slate-400">Type to filter rows in the table.</p>
+    </div>
+  </div></div>
+</div>
+				
+				
+<div class="px-6 py-4 grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-50/50 flex-shrink-0 border-b border-slate-200">
+    <div onclick="showAllWaste(this)" class="kpi-card bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-200 cursor-pointer flex items-center space-x-4 group transition-all">
+    <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+        <i data-lucide="indian-rupee" class="w-5 h-5 text-white"></i>
+    </div>
+    <div>
+        <p class="text-[14px] font-bold text-blue-900 leading-none mb-1">Total Waste</p>
+        <p class="text-lg font-black text-blue-950 leading-none">$711.29</p>
+    </div>
+</div>
+
+    <div onclick="filterByHighestDate('02/06/2026', this)" class="kpi-card bg-indigo-50 p-4 rounded-xl shadow-sm border border-indigo-200 hover:border-indigo-400 cursor-pointer flex items-center space-x-4 transition-all group">
+    <div class="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+        <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+    </div>
+    <div>
+        <p class="text-[14px] font-bold text-indigo-900 leading-none mb-1">Highest Day</p>
+        <p class="text-lg font-black text-indigo-950 leading-none">02/06/2026</p>
+    </div>
+</div>
+
+    <div class="kpi-card bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200 hover:border-rose-400 cursor-pointer flex items-center space-x-4 transition-all">
+        <div class="w-10 h-10 bg-rose-500 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i data-lucide="activity" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+            <p class="text-[14px] font-bold text-rose-900 leading-none mb-1">Avg Daily</p>
+            <p class="text-lg font-black text-rose-950 leading-none">$23.70</p>
+        </div>
+    </div>
+
+    <div onclick="filterUnfinalized(this)" class="kpi-card bg-amber-50 p-4 rounded-xl shadow-sm border border-amber-200 hover:border-amber-400 cursor-pointer flex items-center space-x-4 transition-all group">
+    <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-white"></i>
+    </div>
+    <div>
+        <p class="text-[14px] font-bold text-amber-900 leading-none mb-1">Un-Finalized</p>
+        <p class="text-lg font-black text-amber-950 leading-none">01</p>
+    </div>
+</div>
+
+    <div onclick="openAIModal()" class="kpi-card bg-emerald-50 p-4 rounded-xl shadow-sm border-2 border-emerald-300 border-dashed cursor-pointer flex items-center space-x-4 group transition-all hover:bg-emerald-100/50">
+        <div class="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:rotate-12 transition-transform">
+            <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div class="overflow-hidden">
+            <p class="text-[14px] font-bold text-emerald-900 leading-none mb-1">Waste Insights</p>
+            
+        </div>
+    </div>
+</div>
+
+                <div class="mod-box bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                    <table class="w-full waste-table">
+                        <thead>
+                            <tr>
+                                <th>Date <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block opacity-40"></i></th>
+                                <th>Total Cost $ <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block opacity-40"></i></th>
+                                <th>Last Finalized By <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block opacity-40"></i></th>
+                                <th>Type <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block opacity-40"></i></th>
+                                <th>Status <i data-lucide="arrow-up-down" class="w-2.5 h-2.5 inline-block opacity-40"></i></th>
+                                <th class="text-right pr-10">Action <i data-lucide="search" class="w-2.5 h-2.5 inline-block opacity-40"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="wasteTableBody"></tbody>
+                    </table>
+<div class="flex items-center justify-between px-6 py-3 border-t border-slate-200 bg-white text-[12px] text-slate-500 rounded-b-xl">
+  <span id="modPageInfo">Showing 0 entries</span>
+  <div id="modPageBtns" class="flex items-center gap-1"></div>
+</div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- VIEW 2: WASTE DETAIL -->
+        <div id="detailView" class="view-container">
+            <div class="p-6 flex-1 overflow-auto custom-scrollbar">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="p-4 flex items-center justify-between border-b border-slate-100">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-1.5 bg-blue-50 text-blue-600 rounded-md"><i data-lucide="trash-2" class="w-4 h-4"></i></div>
+                            <h2 class="text-sm font-bold text-slate-700">Waste - <span id="detailDate">02/08/2026</span></h2>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="flex items-center space-x-2 px-4 py-1.5 bg-slate-300 text-white rounded text-xs font-bold cursor-not-allowed">
+                                <i data-lucide="save" class="w-3.5 h-3.5"></i> <span>Save</span>
+                            </button>
+                            <button class="flex items-center space-x-2 px-4 py-1.5 bg-[#38bdf8] text-white rounded text-xs font-bold">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> <span>Un-Finalize</span>
+                            </button>
+                            <button class="flex items-center space-x-2 px-4 py-1.5 bg-blue-500 text-white rounded text-xs font-bold">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>Audit Trail</span>
+                            </button>
+                            <button onclick="closeDetail()" class="flex items-center space-x-2 px-4 py-1.5 bg-rose-500 text-white rounded text-xs font-bold">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i> <span>Close</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50/30 flex items-center justify-between border-b border-slate-100">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Search by</span>
+                            <div class="relative w-40">
+                                <select class="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-xs appearance-none font-bold text-slate-500">
+                                    <option>Select</option>
+                                    <option>Item Name</option>
+                                    <option>SKU</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-2 top-2.5 w-3 h-3 text-slate-400"></i>
+                            </div>
+                            <input type="text" placeholder="Search and add item" class="w-64 border border-slate-200 rounded px-3 py-1.5 text-xs bg-[#f1f5f9]/50">
+                        </div>
+                        <button class="flex items-center space-x-2 px-4 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-600 bg-white shadow-sm">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i> <span>Print</span> <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full detail-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Item <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Unit 1 <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Unit 2 <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Unit 3 <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Unit 4 <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Waste Reason <span class="text-rose-500">*</span> <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Waste $ <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th>Last Updated At <i data-lucide="arrow-up-down" class="w-2 h-2 inline-block"></i></th>
+                                    <th class="text-center">Action <i data-lucide="search" class="w-2 h-2 inline-block"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-4 bg-white border-t border-slate-100 flex justify-end">
+                        <div class="text-sm font-bold text-slate-700">Total Cost : <span class="ml-4">$ 15.53</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        const wasteData = [
+            { date: '02/09/2026', cost: '24.02', user: '', type: 'POS', status: 'Finalized' },
+            { date: '02/08/2026', cost: '15.53', user: 'Brandon C', type: 'Manual', status: 'Finalized' },
+            { date: '02/08/2026', cost: '98.02', user: '', type: 'POS', status: 'Finalized' },
+            { date: '02/07/2026', cost: '123.41', user: '', type: 'POS', status: 'Finalized' },
+            { date: '02/06/2026', cost: '2.21', user: 'Hope B', type: 'Manual', status: 'Un-Finalized' },
+            { date: '02/06/2026', cost: '163.71', user: '', type: 'POS', status: 'Finalized' },
+            { date: '02/05/2026', cost: '82.57', user: '', type: 'POS', status: 'Finalized' },
+            { date: '02/04/2026', cost: '8.5', user: 'Hope B', type: 'Manual', status: 'Finalized' },
+            { date: '02/04/2026', cost: '117.46', user: '', type: 'POS', status: 'Finalized' },
+            { date: '02/03/2026', cost: '87.86', user: '', type: 'POS', status: 'Finalized' }
+        ];
+
+        const itemData = [
+            { name: '12" Cheese', tag: 'MENU', u1: '1 each', u2: '-', u3: '-', u4: '-', reason: 'EXPIRED PRODUCT', cost: '2.52', updated: '02/09/2026 01:00 AM' },
+            { name: 'Dough Ball for Craz...', tag: 'PREP', u1: '13 Dough Ball', u2: '-', u3: '-', u4: '-', reason: 'EXPIRED PRODUCT', cost: '3.36', updated: '02/09/2026 01:00 AM' },
+            { name: 'Dough Ball for Larg...', tag: 'PREP', u1: '8 Dough Ball', u2: '-', u3: '-', u4: '-', reason: 'EXPIRED PRODUCT', cost: '3.75', updated: '02/09/2026 01:00 AM' },
+            { name: 'Dough Ball for Medi...', tag: 'PREP', u1: '12 Dough Ball', u2: '-', u3: '-', u4: '-', reason: 'EXPIRED PRODUCT', cost: '4.31', updated: '02/09/2026 01:00 AM' },
+            { name: 'Rockstar 473 mL', tag: 'MENU', u1: '1 each', u2: '-', u3: '-', u4: '-', reason: 'Spoilage', cost: '1.60', updated: '02/09/2026 01:00 AM' }
+        ];
+
+        function renderTable(filterStatuses = ['All']) {
+            const tableBody = document.getElementById('wasteTableBody');
+            const filtered = wasteData.filter(item => filterStatuses.includes('All') || filterStatuses.includes(item.status));
+            
+            tableBody.innerHTML = filtered.map(item => `
+                <tr class="data-row" onclick="openDetail('${item.date}')">
+                    <td class="font-medium text-slate-500">${item.date}</td>
+                    <td class="text-right pr-24 font-bold text-slate-700">$ ${item.cost}</td>
+                    <td class="text-slate-600">${item.user}</td>
+                    <td><span class="text-[11px] font-bold px-2 py-0.5 rounded ${item.type === 'Manual' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'text-slate-500'}">${item.type}</span></td>
+                    <td><span class="${item.status === 'Finalized' ? 'text-emerald-500' : 'text-rose-500'} font-bold text-xs">${item.status}</span></td>
+                    <td class="text-right pr-6">
+                        <div class="flex items-center justify-end space-x-3">
+                            <i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i>
+                            ${item.type === 'Manual' ? `<i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openDetail(date) {
+            document.getElementById('listView').classList.remove('view-active');
+            document.getElementById('detailView').classList.add('view-active');
+            document.getElementById('detailDate').innerText = date;
+            
+            const detailBody = document.getElementById('detailTableBody');
+            detailBody.innerHTML = itemData.map(item => `
+                <tr class="text-xs border-b border-slate-100 hover:bg-slate-50">
+                    <td class="p-3">
+                        <div class="font-bold text-slate-700">${item.name}</div>
+                        <div class="text-[10px] text-emerald-500 font-bold uppercase">${item.tag}</div>
+                    </td>
+                    <td class="p-3 text-center"><div class="flex items-center justify-center space-x-2"><span class="bg-slate-100 px-3 py-1 rounded text-slate-400 font-bold">${item.u1.split(' ')[0]}</span> <span class="text-slate-500">${item.u1.split(' ')[1]}</span></div></td>
+                    <td class="p-3 text-center text-slate-400">${item.u2}</td>
+                    <td class="p-3 text-center text-slate-400">${item.u3}</td>
+                    <td class="p-3 text-center text-slate-400">${item.u4}</td>
+                    <td class="p-3">
+                        <div class="relative border border-slate-200 rounded bg-white px-3 py-1.5 text-slate-500 flex items-center justify-between">
+                            ${item.reason} <i data-lucide="chevron-down" class="w-3 h-3 ml-2"></i>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right font-bold text-slate-700">$ ${item.cost}</td>
+                    <td class="p-3 text-slate-500">${item.updated}</td>
+                    <td class="p-3">
+                        <div class="flex items-center justify-center space-x-4">
+                            <i data-lucide="paperclip" class="w-4 h-4 text-slate-400 cursor-pointer"></i>
+                            <i data-lucide="trash-2" class="w-4 h-4 text-rose-300 cursor-pointer"></i>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function closeDetail() {
+            document.getElementById('detailView').classList.remove('view-active');
+            document.getElementById('listView').classList.add('view-active');
+        }
+
+        const filterToggle = document.getElementById('filterToggle');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const closeFilter = document.getElementById('closeFilter');
+
+        if (filterToggle && filterDropdown) {
+            filterToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                filterDropdown.classList.toggle('hidden-dropdown');
+            });
+        }
+
+        if (closeFilter && filterDropdown) closeFilter.addEventListener('click', () => filterDropdown.classList.add('hidden-dropdown'));
+
+        const applyFiltersBtn = document.getElementById('applyFilters');
+        if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', () => {
+            const selected = Array.from(document.querySelectorAll('.status-check:checked')).map(cb => cb.value);
+            renderTable(selected);
+            if (filterDropdown) filterDropdown.classList.add('hidden-dropdown');
+        });
+
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', () => {
+            document.querySelectorAll('.status-check').forEach(cb => cb.checked = true);
+            renderTable(['All']);
+            if (filterDropdown) filterDropdown.classList.add('hidden-dropdown');
+        });
+
+        window.onclick = (e) => {
+            if (filterDropdown && !filterDropdown.contains(e.target) && e.target !== filterToggle) {
+                filterDropdown.classList.add('hidden-dropdown');
+            }
+        };
+
+        window.onload = () => renderTable(['All']);
+		
+		let trendChart, donutChart;
+
+function openAIModal() {
+    const modal = document.getElementById('aiModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    lucide.createIcons();
+
+    // Small delay to ensure canvas is ready
+    setTimeout(() => {
+        renderCharts();
+    }, 100);
+}
+
+function renderCharts() {
+    // 1. Waste Trend Line Chart (with Hover Tooltips)
+    const trendCtx = document.getElementById('wasteTrendChart').getContext('2d');
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Waste Cost',
+                data: [18.5, 24.2, 15.0, 28.7, 22.1, 45.3, 112.4],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 4,
+                pointRadius: 6,
+                pointHoverRadius: 9,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#3b82f6',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' }, // Better Hover behavior
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: '#0f172a',
+                    titleFont: { size: 12, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: { label: (context) => `Cost: $${context.parsed.y}` }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false }, ticks: { font: { size: 10, weight: '600' } } },
+                x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10, weight: '600' } } }
+            }
+        }
+    });
+
+    // 2. Category Donut Chart (with Hover Tooltips)
+    const donutCtx = document.getElementById('categoryDonutChart').getContext('2d');
+    if (donutChart) donutChart.destroy();
+    donutChart = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Dairy', 'Prep', 'Items', 'Others'],
+            datasets: [{
+                data: [45, 25, 20, 10],
+                backgroundColor: ['#3b82f6', '#818cf8', '#f43f5e', '#e2e8f0'],
+                hoverOffset: 20,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' }, padding: 15 } },
+                tooltip: {
+                    enabled: true,
+                    padding: 12,
+                    backgroundColor: '#0f172a',
+                    callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%` }
+                }
+            },
+            cutout: '75%'
+        }
+    });
+}
+
+function closeAIModal() {
+    document.getElementById('aiModal').classList.add('hidden');
+    document.getElementById('aiModal').classList.remove('flex');
+}
+
+// Function to filter by specific Day (e.g., Sunday)
+function filterByDay(dayName) {
+    const tableBody = document.getElementById('wasteTableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+    
+    // Clear existing filters and highlights
+    document.querySelectorAll('.kpi-card').forEach(c => c.classList.replace('border-indigo-500', 'border-transparent'));
+    
+    for (let row of rows) {
+        // Hamare table mein Date column 1st index par hai (Date | Status | Category...)
+        const dateText = row.cells[0].innerText; // e.g., "05/19/24 (Sun)"
+        
+        if (dateText.includes(`(${dayName.substring(0,3)})`)) {
+            row.style.display = "";
+            row.classList.add('bg-indigo-50/30'); // Highlight filtered rows
+        } else {
+            row.style.display = "none";
+        }
+    }
+}
+
+// Function to filter by Status (Un-Finalized)
+function filterByStatus(status) {
+    // Apke existing renderTable function ko call karega status filter ke sath
+    renderTable([status]);
+    
+    // UI feedback: check only Un-Finalized in the filter dropdown
+    document.querySelectorAll('.status-check').forEach(cb => {
+        cb.checked = (cb.value === status);
+    });
+}
+
+// Function to filter by Exact Date (e.g., 05/19/24)
+function filterByExactDate(targetDate) {
+    const tableBody = document.getElementById('wasteTableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+    
+    // UI Feedback: Highlight this KPI and reset others
+    document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('border-indigo-500'));
+    event.currentTarget.classList.add('border-indigo-500');
+
+    for (let row of rows) {
+        // Date column se text nikalna (Hamare format mein "MM/DD/YY (Day)" hota hai)
+        const rowDate = row.cells[0].innerText; 
+        
+        if (rowDate.startsWith(targetDate)) {
+            row.style.display = "";
+            row.classList.add('bg-indigo-50/50'); // Highlight filtered row
+        } else {
+            row.style.display = "none";
+            row.classList.remove('bg-indigo-50/50');
+        }
+    }
+}
+
+// Ensure Total Waste card calls this to reset everything
+// renderTable(['All']) handle karega default behavior
+
+// Helper function to reset all KPI card borders
+// Sabhi KPI cards ke border reset karne ke liye
+// 1. Sabhi KPI borders reset karne ke liye helper
+function resetKPIBorders() {
+    document.querySelectorAll('.kpi-card').forEach(card => {
+        card.classList.remove('border-indigo-500', 'border-blue-500', 'border-amber-500', 'shadow-md');
+        card.classList.add('border-transparent');
+    });
+}
+
+// 2. Total Waste (Sare data dikhane ke liye)
+function showAllWaste(element) {
+    resetKPIBorders();
+    element.classList.remove('border-transparent');
+    element.classList.add('border-blue-500', 'shadow-md');
+    
+    // Sabhi status check boxes ko wapas check kar do
+    document.querySelectorAll('.status-check').forEach(cb => cb.checked = true);
+    renderTable(['All']);
+}
+
+// 3. Un-Finalized Filter
+function filterUnfinalized(element) {
+    resetKPIBorders();
+    element.classList.remove('border-transparent');
+    element.classList.add('border-amber-500', 'shadow-md');
+    
+    // Sirf Un-Finalized wala check box on rakho (optional but good for sync)
+    document.querySelectorAll('.status-check').forEach(cb => {
+        cb.checked = (cb.value === 'Un-Finalized');
+    });
+    
+    renderTable(['Un-Finalized']);
+}
+
+// 4. Highest Day Filter (Exact Date)
+function filterByHighestDate(targetDate, element) {
+    resetKPIBorders();
+    element.classList.remove('border-transparent');
+    element.classList.add('border-indigo-500', 'shadow-md');
+
+    // Pehle saara data render karo
+    renderTable(['All']);
+    
+    // Ab render hone ke baad un rows ko hide karo jo date match nahi karti
+    const rows = document.getElementById('wasteTableBody').getElementsByTagName('tr');
+    for (let row of rows) {
+        const rowDate = row.cells[0].innerText; // Date column
+        if (rowDate.startsWith(targetDate)) {
+            row.style.display = "";
+            row.classList.add('bg-indigo-50/50');
+        } else {
+            row.style.display = "none";
+        }
+    }
+}
+    </script>
+	
+	<div id="aiModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-6xl overflow-hidden border border-white/20 transform transition-all scale-100">
+        
+        <div class="bg-white px-8 py-3 border-b border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Waste Insights</h3>
+                </div>
+            </div>
+            <button onclick="closeAIModal()" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors group">
+                <i data-lucide="x" class="w-5 h-5 text-slate-400 group-hover:text-slate-600"></i>
+            </button>
+        </div>
+
+        <div class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-10 bg-white">
+            
+            <div class="space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="line-chart" class="w-4 h-4"></i></span>
+                    <h4 class="text-[16px] font-black text-slate-800  tracking-widest">Waste Trend</h4>
+                </div>
+                <div class="h-[320px] bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <canvas id="wasteTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="space-y-4 px-2">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="pie-chart" class="w-4 h-4"></i></span>
+                    <h4 class="text-[16px] font-black text-slate-800  tracking-widest">By Category</h4>
+                </div>
+                <div class="h-[320px] bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-center">
+                    <canvas id="categoryDonutChart"></canvas>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="p-1.5 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="flame" class="w-4 h-4"></i></span>
+                    <h4 class="text-[16px] font-black text-slate-800  tracking-widest">Top 5 Loss Items</h4>
+                </div>
+                <div class="space-y-3 bg-slate-50/50 p-5 rounded-2xl border border-slate-100 min-h-[320px] flex flex-col justify-between">
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                        <span class="text-sm font-bold text-slate-700">1. Cheese Dough</span>
+                        <span class="text-sm font-black text-rose-600">$42.50</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-white/80 rounded-xl border border-slate-100 shadow-sm">
+                        <span class="text-sm font-bold text-slate-700">2. Pepperoni (Bulk)</span>
+                        <span class="text-sm font-black text-rose-600">$38.20</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-white/60 rounded-xl border border-slate-100 shadow-sm">
+                        <span class="text-sm font-bold text-slate-700">3. Buffalo Sauce</span>
+                        <span class="text-sm font-black text-rose-600">$22.15</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-white/40 rounded-xl border border-slate-100 shadow-sm">
+                        <span class="text-sm font-bold text-slate-700">4. Fresh Basil</span>
+                        <span class="text-sm font-black text-rose-600">$18.90</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-white/20 rounded-xl border border-slate-100 shadow-sm">
+                        <span class="text-sm font-bold text-slate-700">5. Mozzarella Blend</span>
+                        <span class="text-sm font-black text-rose-600">$12.45</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 bg-slate-50/80 border-t border-slate-100 flex justify-center">
+            <button onclick="closeAIModal()" class="px-14 py-2.5 bg-[#0f172a] text-white text-sm font-black rounded-xl shadow-lg hover:bg-slate-800 transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+  function toggleModDate(e){e.stopPropagation();var f=document.getElementById('modFilterPanel');if(f)f.classList.add('hidden');document.getElementById('modDatePanel').classList.toggle('hidden');}
+  function closeModDate(){document.getElementById('modDatePanel').classList.add('hidden');}
+  function applyModDate(){var f=document.getElementById('modDateFrom').value,t=document.getElementById('modDateTo').value,fmt=function(s){return new Date(s+'T00:00').toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});};if(f&&t)document.getElementById('modDateLabel').textContent=fmt(f)+' - '+fmt(t);closeModDate();}
+  function toggleModFilter(e){e.stopPropagation();var d=document.getElementById('modDatePanel');if(d)d.classList.add('hidden');document.getElementById('modFilterPanel').classList.toggle('hidden');}
+  function modSearchRows(q){q=(q||'').trim().toLowerCase();document.querySelectorAll('.mod-box tbody tr').forEach(function(r){r.style.display=(!q||r.textContent.toLowerCase().includes(q))?'':'none';});}
+  document.addEventListener('click',function(e){var fp=document.getElementById('modFilterPanel');if(fp&&!fp.classList.contains('hidden')&&!fp.parentElement.contains(e.target))fp.classList.add('hidden');var dp=document.getElementById('modDatePanel'),dw=document.getElementById('modDateWrap');if(dp&&!dp.classList.contains('hidden')&&dw&&!dw.contains(e.target))dp.classList.add('hidden');});
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>
+<script>
+(function(){
+  var MOD_PER=15, modPage=1;
+  function modApplyPagination(){
+    var box=document.querySelector('.mod-box'); if(!box) return;
+    var rows=Array.prototype.slice.call(box.querySelectorAll('tbody tr'));
+    var total=rows.length, pages=Math.max(1,Math.ceil(total/MOD_PER));
+    if(modPage>pages)modPage=pages; if(modPage<1)modPage=1;
+    rows.forEach(function(r,i){ r.style.display=(i>=(modPage-1)*MOD_PER && i<modPage*MOD_PER)?'':'none'; });
+    var s=total?((modPage-1)*MOD_PER+1):0, e=Math.min(modPage*MOD_PER,total);
+    var info=document.getElementById('modPageInfo'); if(info)info.innerHTML='Showing <span class="font-bold text-slate-700">'+s+'–'+e+'</span> of <span class="font-bold text-slate-700">'+total+'</span> entries';
+    var nav=document.getElementById('modPageBtns');
+    if(nav){var h='<button onclick="modGoPage('+(modPage-1)+')" class="px-2.5 py-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50" '+(modPage<=1?'disabled':'')+'><i class="fas fa-chevron-left text-[10px]"></i></button>';
+      for(var p=1;p<=pages;p++){h+='<button onclick="modGoPage('+p+')" class="px-3 py-1 rounded border font-bold '+(p===modPage?'border-blue-500 bg-blue-500 text-white':'border-slate-200 text-slate-600 hover:bg-slate-50')+'">'+p+'</button>';}
+      h+='<button onclick="modGoPage('+(modPage+1)+')" class="px-2.5 py-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50" '+(modPage>=pages?'disabled':'')+'><i class="fas fa-chevron-right text-[10px]"></i></button>';
+      nav.innerHTML=h;}
+    if(window.lucide)lucide.createIcons();
+  }
+  window.modGoPage=function(p){modPage=p;modApplyPagination();};
+  window.modApplyPagination=modApplyPagination;
+  window.addEventListener('load',function(){setTimeout(modApplyPagination,200);});
+})();
+</script>
+</body>
+</html>
